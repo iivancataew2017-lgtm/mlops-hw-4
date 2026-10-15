@@ -1,0 +1,38 @@
+version: 2
+sources:
+  - name: raw
+    database: "{{ var('raw_database', 'transactions_db') }}"
+    schema: "{{ var('raw_database', 'transactions_db') }}"
+    description: Исходные транзакции из ДЗ по ClickHouse.
+    tables:
+      - name: transactions
+        columns:
+          - name: transaction_time
+            description: Время транзакции, принимаем UTC.
+            tests: [not_null]
+          - name: merch
+            description: Название мерчанта.
+          - name: cat_id
+            description: Категория транзакции.
+          - name: amount
+            description: Сумма транзакции.
+            tests: [not_null]
+          - name: name_1
+            description: Имя клиента.
+          - name: name_2
+            description: Фамилия клиента.
+          - name: gender
+            description: Пол M/F.
+          - name: us_state
+            description: Код штата США или DC.
+          - name: lat
+            description: Широта клиента.
+          - name: lon
+            description: Долгота клиента.
+          - name: merchant_lat
+            description: Широта мерчанта.
+          - name: merchant_lon
+            description: Долгота мерчанта.
+          - name: target
+            description: Метка мошенничества 0 или 1.
+            tests: [not_null]

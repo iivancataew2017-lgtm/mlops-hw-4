@@ -1,0 +1,144 @@
+version: 2
+models:
+  - name: mart_daily_state_metrics
+    description: Дневные метрики по штату.
+    columns:
+      - name: transaction_date
+        description: Дата UTC.
+        tests: [not_null]
+      - name: state
+        description: Код штата или DC.
+        tests: [not_null]
+      - name: transaction_count
+        description: Количество транзакций.
+      - name: total_amount
+        description: Общая сумма транзакций.
+      - name: avg_amount
+        description: Средняя сумма транзакции.
+      - name: p95_amount
+        description: Точный 95-й перцентиль суммы транзакций.
+      - name: large_transaction_share
+        description: Доля LARGE транзакций от 0 до 1.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [transaction_date, state]
+
+  - name: mart_fraud_by_category
+    description: Статистика мошенничества по категориям за весь период.
+    columns:
+      - name: category
+        description: Категория транзакции.
+        tests: [not_null, unique]
+      - name: transaction_count
+        description: Количество транзакций.
+      - name: fraud_count
+        description: Количество мошеннических транзакций.
+      - name: fraud_rate
+        description: Процент мошеннических транзакций от 0 до 100.
+      - name: total_amount
+        description: Общая сумма транзакций.
+      - name: fraud_amount
+        description: Сумма мошеннических транзакций.
+
+  - name: mart_fraud_by_state
+    description: Статистика мошенничества по штатам за весь период.
+    columns:
+      - name: state
+        description: Код штата или DC.
+        tests: [not_null, unique]
+      - name: transaction_count
+        description: Количество транзакций.
+      - name: fraud_count
+        description: Количество мошеннических транзакций.
+      - name: fraud_rate
+        description: Процент мошеннических транзакций от 0 до 100.
+      - name: unique_customers
+        description: Количество уникальных псевдоключей клиентов.
+      - name: unique_merchants
+        description: Количество уникальных мерчантов.
+      - name: total_amount
+        description: Общая сумма транзакций.
+      - name: fraud_amount
+        description: Сумма мошеннических транзакций.
+
+  - name: mart_customer_risk_profile
+    description: Риск клиента по истории транзакций. Псевдоключ может объединять разных людей.
+    columns:
+      - name: customer_key
+        description: Псевдоключ клиента.
+        tests: [not_null, unique]
+      - name: transaction_count
+        description: Количество транзакций.
+      - name: fraud_count
+        description: Количество мошеннических транзакций.
+      - name: fraud_rate
+        description: Процент мошеннических транзакций от 0 до 100.
+      - name: total_amount
+        description: Общая сумма транзакций.
+      - name: avg_amount
+        description: Средняя сумма транзакции.
+      - name: first_transaction_time
+        description: Время первой транзакции.
+      - name: last_transaction_time
+        description: Время последней транзакции.
+      - name: risk_level
+        description: HIGH от 5%, MEDIUM от 1%, иначе LOW. Пороги в vars.
+        tests:
+          - accepted_values:
+              values: [LOW, MEDIUM, HIGH]
+
+  - name: mart_hourly_fraud_pattern
+    description: Статистика мошенничества по дням недели и часам UTC.
+    columns:
+      - name: day_of_week
+        description: День недели от 1 (понедельник) до 7 (воскресенье).
+        tests: [not_null]
+      - name: transaction_hour
+        description: Час UTC от 0 до 23.
+        tests: [not_null]
+      - name: transaction_count
+        description: Количество транзакций.
+      - name: fraud_count
+        description: Количество мошеннических транзакций.
+      - name: fraud_rate
+        description: Процент мошеннических транзакций от 0 до 100.
+      - name: total_amount
+        description: Общая сумма транзакций.
+      - name: fraud_amount
+        description: Сумма мошеннических транзакций.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [day_of_week, transaction_hour]
+
+  - name: mart_merchant_analytics
+    description: Оборот и риск мерчантов за весь период.
+    columns:
+      - name: merchant
+        description: Название мерчанта.
+        tests: [not_null, unique]
+      - name: transaction_count
+        description: Количество транзакций.
+      - name: fraud_count
+        description: Количество мошеннических транзакций.
+      - name: fraud_rate
+        description: Процент мошеннических транзакций от 0 до 100.
+      - name: total_amount
+        description: Общая сумма транзакций.
+      - name: fraud_amount
+        description: Сумма мошеннических транзакций.
+      - name: unique_customers
+        description: Количество уникальных псевдоключей клиентов.
+      - name: is_suspicious
+        description: 1 при fraud_rate от 5% и количестве транзакций от 20, иначе 0.
+        tests:
+          - accepted_values:
+              values: [0, 1]
+              quote: false
+
+seeds:
+  - name: states
+    description: 50 штатов США и округ Колумбия (DC).
+    columns:
+      - name: state
+        description: Двухбуквенный код.
+        tests: [not_null, unique]

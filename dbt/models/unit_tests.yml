@@ -1,0 +1,64 @@
+version: 2
+unit_tests:
+  - name: staging_amount_boundaries_and_normalization
+    model: stg_transactions
+    given:
+      - input: source('raw', 'transactions')
+        format: sql
+        rows: |
+          select
+              toDateTime('2020-01-06 00:00:00', 'UTC') as transaction_time,
+              ' shop ' as merch,
+              ' GROCERY_POS ' as cat_id,
+              toFloat64(arrayJoin([0, 99.99, 100, 999.99, 1000])) as amount,
+              ' Alice ' as name_1,
+              ' SMITH ' as name_2,
+              ' f ' as gender,
+              ' ca ' as us_state,
+              toFloat64(1) as lat,
+              toFloat64(2) as lon,
+              toFloat64(3) as merchant_lat,
+              toFloat64(4) as merchant_lon,
+              toUInt8(0) as target
+    expect:
+      rows:
+        - {amount: 0, amount_bucket: SMALL, merchant: shop, category: grocery_pos, gender: F, state: CA, day_of_week: 1, transaction_hour: 0}
+        - {amount: 99.99, amount_bucket: SMALL, merchant: shop, category: grocery_pos, gender: F, state: CA, day_of_week: 1, transaction_hour: 0}
+        - {amount: 100, amount_bucket: MEDIUM, merchant: shop, category: grocery_pos, gender: F, state: CA, day_of_week: 1, transaction_hour: 0}
+        - {amount: 999.99, amount_bucket: MEDIUM, merchant: shop, category: grocery_pos, gender: F, state: CA, day_of_week: 1, transaction_hour: 0}
+        - {amount: 1000, amount_bucket: LARGE, merchant: shop, category: grocery_pos, gender: F, state: CA, day_of_week: 1, transaction_hour: 0}
+
+  - name: customer_risk_thresholds
+    model: mart_customer_risk_profile
+    given:
+      - input: ref('stg_transactions')
+        format: sql
+        rows: |
+          select
+              'high' as customer_key,
+              toUInt8(number < 5) as is_fraud,
+              toFloat64(10) as amount,
+              toDateTime('2020-01-01', 'UTC') as transaction_time
+          from
+              numbers(100)
+          union all
+          select
+              'medium',
+              toUInt8(number < 1),
+              toFloat64(20),
+              toDateTime('2020-01-01', 'UTC')
+          from
+              numbers(100)
+          union all
+          select
+              'low',
+              toUInt8(0),
+              toFloat64(30),
+              toDateTime('2020-01-01', 'UTC')
+          from
+              numbers(100)
+    expect:
+      rows:
+        - {customer_key: high, transaction_count: 100, fraud_count: 5, fraud_rate: 5, risk_level: HIGH}
+        - {customer_key: medium, transaction_count: 100, fraud_count: 1, fraud_rate: 1, risk_level: MEDIUM}
+        - {customer_key: low, transaction_count: 100, fraud_count: 0, fraud_rate: 0, risk_level: LOW}

@@ -1,0 +1,22 @@
+[sqlfluff]
+dialect = clickhouse
+templater = dbt
+max_line_length = 140
+exclude_rules = RF04,CP03
+[sqlfluff:templater:dbt]
+project_dir = dbt
+profiles_dir = dbt
+[sqlfluff:rules:capitalisation.keywords]
+capitalisation_policy = lower
+
+[sqlfluff:layout:type:from_clause]
+keyword_line_position = alone:strict
+
+[sqlfluff:layout:type:groupby_clause]
+keyword_line_position = alone:strict
+
+[sqlfluff:layout:type:orderby_clause]
+keyword_line_position = alone:strict
+
+[sqlfluff:indentation]
+skip_indentation_in = script_content,merge_tree_order_by_clause

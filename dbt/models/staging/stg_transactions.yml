@@ -1,0 +1,71 @@
+version: 2
+models:
+  - name: stg_transactions
+    description: Очищенные транзакции без удаления исходных строк.
+    columns:
+      - name: customer_key
+        description: Псевдоключ из имени, фамилии, пола и координат клиента.
+        tests: [not_null]
+      - name: transaction_time
+        description: Время транзакции UTC.
+        tests: [not_null]
+      - name: transaction_date
+        description: Дата транзакции UTC.
+      - name: day_of_week
+        description: День недели от 1 (понедельник) до 7 (воскресенье).
+        tests:
+          - accepted_values:
+              values: [1, 2, 3, 4, 5, 6, 7]
+              quote: false
+      - name: transaction_hour
+        description: Час UTC от 0 до 23.
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 23
+      - name: merchant
+        description: Название мерчанта без крайних пробелов.
+        tests: [not_null]
+      - name: category
+        description: Категория в нижнем регистре.
+        tests: [not_null]
+      - name: amount
+        description: Сумма транзакции.
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+      - name: amount_bucket
+        description: SMALL до 100, MEDIUM от 100 до 1000, LARGE от 1000. Пороги в vars.
+        tests:
+          - accepted_values:
+              values: [SMALL, MEDIUM, LARGE]
+      - name: gender
+        description: Пол M/F.
+        tests:
+          - accepted_values:
+              values: [M, F]
+      - name: state
+        description: Код штата или DC в верхнем регистре.
+        tests:
+          - not_null
+          - relationships:
+              to: ref('states')
+              field: state
+      - name: latitude
+        description: Широта клиента.
+      - name: longitude
+        description: Долгота клиента.
+      - name: merchant_latitude
+        description: Широта мерчанта.
+      - name: merchant_longitude
+        description: Долгота мерчанта.
+      - name: is_fraud
+        description: Метка мошенничества 0 или 1.
+        tests:
+          - accepted_values:
+              values: [0, 1]
+              quote: false
+    tests:
+      - dbt_expectations.expect_table_row_count_to_be_between:
+          min_value: 1

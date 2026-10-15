@@ -1,0 +1,18 @@
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.8-alpine
+    ports: ['127.0.0.1:${CLICKHOUSE_HTTP_PORT:-18123}:8123']
+    environment:
+      CLICKHOUSE_USER: dbt
+      CLICKHOUSE_PASSWORD: dbt_local
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: '1'
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - ./infra/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ['CMD', 'clickhouse-client', '--user', 'dbt', '--password', 'dbt_local', '--query', 'SELECT 1']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+volumes:
+  clickhouse_data:
