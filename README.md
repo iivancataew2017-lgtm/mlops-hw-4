@@ -1,6 +1,6 @@
 # Домашнее задание 4
 
-## Что сделано в работе (по пунктам задания)
+## Что сделано в работе
 
 1) В `dbt/models/sources/sources.yml` описана исходная таблица `transactions_db.transactions`. `scripts/load_data.py` загружает в неё данные из `train.csv`.
 
